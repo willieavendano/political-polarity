@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Political Polarity Text Analyzer</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #dee2e6;
+    --text: #212529;
+    --muted: #6c757d;
+    --left: #2196F3;
+    --center: #9E9E9E;
+    --right: #F44336;
+    --accent: #495057;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+  header {
+    text-align: center;
+    padding: 40px 0 10px;
+  }
+  header h1 { font-size: 1.8rem; font-weight: 700; }
+  header p { color: var(--muted); margin-top: 6px; font-size: 0.95rem; }
+
+  .warning-banner {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0 24px;
+    font-size: 0.85rem;
+    color: #664d03;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .card h2 { font-size: 1.1rem; margin-bottom: 14px; font-weight: 600; }
+
+  textarea {
+    width: 100%;
+    min-height: 160px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    resize: vertical;
+    line-height: 1.5;
+  }
+  textarea:focus { outline: none; border-color: #80bdff; box-shadow: 0 0 0 3px rgba(0,123,255,0.15); }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  button {
+    padding: 10px 22px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.15s;
+  }
+  .btn-primary { background: #0d6efd; color: #fff; }
+  .btn-primary:hover { background: #0b5ed7; }
+  .btn-primary:disabled { background: #6c757d; cursor: wait; }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 0.82rem;
+  }
+  .btn-outline:hover { background: #f1f3f5; }
+
+  /* Results */
+  .results { display: none; }
+  .results.show { display: block; }
+
+  .result-label {
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  .label-left   { background: #e3f2fd; color: #1565c0; }
+  .label-center { background: #f5f5f5; color: #424242; }
+  .label-right  { background: #ffebee; color: #c62828; }
+
+  .polarity-bar-wrap {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 20px; font-size: 0.85rem; color: var(--muted);
+  }
+  .polarity-track {
+    flex: 1;
+    height: 18px;
+    background: linear-gradient(to right, var(--left), #e0e0e0 50%, var(--right));
+    border-radius: 9px;
+    position: relative;
+  }
+  .polarity-marker {
+    position: absolute;
+    top: -3px;
+    width: 24px; height: 24px;
+    background: var(--text);
+    border: 3px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    transform: translateX(-50%);
+    transition: left 0.4s ease;
+  }
+  .polarity-value {
+    font-size: 1.1rem; font-weight: 700; min-width: 65px; text-align: center;
+  }
+
+  .prob-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 8px; font-size: 0.9rem;
+  }
+  .prob-label { width: 60px; text-align: right; font-weight: 600; }
+  .prob-track { flex: 1; height: 22px; background: #f1f3f5; border-radius: 6px; overflow: hidden; }
+  .prob-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease; }
+  .prob-fill.left   { background: var(--left); }
+  .prob-fill.center { background: var(--center); }
+  .prob-fill.right  { background: var(--right); }
+  .prob-pct { min-width: 50px; font-weight: 600; font-size: 0.85rem; }
+
+  .features-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+  .features-table th { text-align: left; padding: 6px 8px; border-bottom: 2px solid var(--border); color: var(--muted); font-weight: 600; }
+  .features-table td { padding: 5px 8px; border-bottom: 1px solid #f1f3f5; }
+  .features-table tr:hover td { background: #f8f9fa; }
+  .feat-score { font-family: monospace; }
+  .feat-pos { color: #c62828; }
+  .feat-neg { color: #1565c0; }
+
+  .examples-label { font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
+
+  .entropy-row {
+    display: flex; gap: 16px; margin-top: 12px; font-size: 0.85rem; color: var(--muted);
+    justify-content: center;
+  }
+
+  .loading { text-align: center; padding: 30px; color: var(--muted); }
+
+  footer {
+    text-align: center; padding: 30px 0; font-size: 0.8rem; color: var(--muted);
+    border-top: 1px solid var(--border); margin-top: 20px;
+  }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Political Polarity Text Analyzer</h1>
+  <p>Paste text to analyze its political polarity. Runs entirely in your browser.</p>
+</header>
+
+<div class="warning-banner">
+  <strong>Ethics Notice:</strong> This tool classifies <em>text content</em>, not individuals.
+  Do NOT use outputs to infer any person's political beliefs.
+  Model trained on synthetic data &mdash; treat results as illustrative, not authoritative.
+  See <a href="https://github.com/willieavendano/political-polarity#model-card" target="_blank">Model Card</a> for limitations.
+</div>
+
+<div class="card">
+  <h2>Input Text</h2>
+  <textarea id="textInput" placeholder="Paste an article, transcript, or opinion piece here..."></textarea>
+  <div class="btn-row">
+    <button class="btn-primary" id="analyzeBtn" onclick="analyze()">Analyze Polarity</button>
+  </div>
+  <div class="btn-row" style="margin-top:8px;">
+    <span class="examples-label">Examples:</span>
+    <button class="btn-outline" onclick="loadExample(0)">Left-leaning</button>
+    <button class="btn-outline" onclick="loadExample(1)">Right-leaning</button>
+    <button class="btn-outline" onclick="loadExample(2)">Center/Balanced</button>
+  </div>
+</div>
+
+<div class="loading" id="loadingMsg">Loading model...</div>
+
+<div class="results" id="results">
+  <div class="card">
+    <div class="result-label" id="resultLabel"></div>
+
+    <div class="polarity-bar-wrap">
+      <span>Left &minus;1</span>
+      <div class="polarity-track">
+        <div class="polarity-marker" id="polarityMarker"></div>
+      </div>
+      <span>+1 Right</span>
+      <div class="polarity-value" id="polarityValue"></div>
+    </div>
+
+    <h2>Class Probabilities</h2>
+    <div class="prob-row">
+      <span class="prob-label" style="color:var(--left)">Left</span>
+      <div class="prob-track"><div class="prob-fill left" id="probLeftBar"></div></div>
+      <span class="prob-pct" id="probLeftPct"></span>
+    </div>
+    <div class="prob-row">
+      <span class="prob-label" style="color:var(--center)">Center</span>
+      <div class="prob-track"><div class="prob-fill center" id="probCenterBar"></div></div>
+      <span class="prob-pct" id="probCenterPct"></span>
+    </div>
+    <div class="prob-row">
+      <span class="prob-label" style="color:var(--right)">Right</span>
+      <div class="prob-track"><div class="prob-fill right" id="probRightBar"></div></div>
+      <span class="prob-pct" id="probRightPct"></span>
+    </div>
+
+    <div class="entropy-row">
+      <span>Entropy: <strong id="entropyVal"></strong></span>
+      <span>|</span>
+      <span id="confidenceNote"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Top Contributing Features</h2>
+    <table class="features-table">
+      <thead><tr><th>Feature</th><th>Direction</th><th>Score</th></tr></thead>
+      <tbody id="featuresBody"></tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<footer>
+  Political Polarity Analyzer &mdash; Classifies text content, NOT individuals.<br>
+  <a href="https://github.com/willieavendano/political-polarity" target="_blank">GitHub</a>
+</footer>
+
+<script>
+// ===== MODEL DATA (loaded from model.json) =====
+let MODEL = null;
+
+const EXAMPLES = [
+  "The government should increase funding for public healthcare programs to ensure universal coverage for all citizens. Expanding Medicaid and supporting community health centers is essential for working families.",
+  "Lower taxes and reduced government regulation are the keys to economic growth. Small businesses are the backbone of America and need relief from bureaucratic red tape. Free market solutions drive innovation.",
+  "The debate over healthcare policy involves legitimate perspectives on both sides. Finding common ground between market-based approaches and public programs remains challenging but necessary for progress."
+];
+
+function loadExample(idx) {
+  document.getElementById("textInput").value = EXAMPLES[idx];
+}
+
+// ===== TOKENIZER =====
+function tokenize(text) {
+  // Lowercase, strip punctuation, split on whitespace
+  return text.toLowerCase()
+    .replace(/[^a-z0-9\s'-]/g, " ")
+    .split(/\s+/)
+    .filter(t => t.length > 0);
+}
+
+function generateNgrams(tokens, minN, maxN) {
+  const ngrams = {};
+  for (let n = minN; n <= maxN; n++) {
+    for (let i = 0; i <= tokens.length - n; i++) {
+      const gram = tokens.slice(i, i + n).join(" ");
+      ngrams[gram] = (ngrams[gram] || 0) + 1;
+    }
+  }
+  return ngrams;
+}
+
+// ===== TF-IDF =====
+function computeTfidf(text) {
+  const tokens = tokenize(text);
+  const [minN, maxN] = MODEL.ngram_range;
+  const ngrams = generateNgrams(tokens, minN, maxN);
+
+  // Build sparse TF-IDF vector (only for terms in vocab)
+  const vec = {};  // index -> tfidf value
+  for (const [gram, count] of Object.entries(ngrams)) {
+    if (gram in MODEL.vocab) {
+      const idx = MODEL.vocab[gram];
+      let tf = count;
+      if (MODEL.sublinear_tf) {
+        tf = 1 + Math.log(tf);
+      }
+      vec[idx] = tf * MODEL.idf[idx];
+    }
+  }
+
+  // L2 normalize
+  let norm = 0;
+  for (const v of Object.values(vec)) { norm += v * v; }
+  norm = Math.sqrt(norm);
+  if (norm > 0) {
+    for (const idx in vec) { vec[idx] /= norm; }
+  }
+
+  return vec;
+}
+
+// ===== LOGISTIC REGRESSION =====
+function predict(tfidfVec) {
+  const nClasses = MODEL.coef.length;
+  const logits = new Array(nClasses);
+
+  for (let c = 0; c < nClasses; c++) {
+    let dot = MODEL.intercept[c];
+    for (const [idx, val] of Object.entries(tfidfVec)) {
+      dot += MODEL.coef[c][parseInt(idx)] * val;
+    }
+    logits[c] = dot;
+  }
+
+  // Softmax
+  const maxLogit = Math.max(...logits);
+  const exps = logits.map(l => Math.exp(l - maxLogit));
+  const sumExp = exps.reduce((a, b) => a + b, 0);
+  const probs = exps.map(e => e / sumExp);
+
+  return probs;
+}
+
+// ===== GET TOP FEATURES =====
+function getTopFeatures(tfidfVec, predClass, topK) {
+  // For each feature present in the text, compute coef * tfidf
+  const scores = [];
+  const reverseVocab = {};
+  for (const [word, idx] of Object.entries(MODEL.vocab)) {
+    reverseVocab[idx] = word;
+  }
+
+  for (const [idx, val] of Object.entries(tfidfVec)) {
+    const i = parseInt(idx);
+    const word = reverseVocab[i] || `feature_${i}`;
+    const score = MODEL.coef[predClass][i] * val;
+    scores.push({ word, score });
+  }
+
+  scores.sort((a, b) => Math.abs(b.score) - Math.abs(a.score));
+  return scores.slice(0, topK);
+}
+
+// ===== ANALYSIS =====
+function analyze() {
+  const text = document.getElementById("textInput").value.trim();
+  if (!text) return;
+  if (!MODEL) { alert("Model still loading..."); return; }
+
+  const btn = document.getElementById("analyzeBtn");
+  btn.disabled = true;
+  btn.textContent = "Analyzing...";
+
+  // Run in next frame so UI updates
+  requestAnimationFrame(() => {
+    const tfidfVec = computeTfidf(text);
+    const probs = predict(tfidfVec);
+    const predIdx = probs.indexOf(Math.max(...probs));
+    const polarity = probs[2] - probs[0]; // P(right) - P(left)
+    const entropy = -probs.reduce((s, p) => s + (p > 0 ? p * Math.log(p) : 0), 0);
+    const features = getTopFeatures(tfidfVec, predIdx, 12);
+
+    displayResults(probs, predIdx, polarity, entropy, features);
+
+    btn.disabled = false;
+    btn.textContent = "Analyze Polarity";
+  });
+}
+
+// ===== DISPLAY =====
+function displayResults(probs, predIdx, polarity, entropy, features) {
+  const classNames = MODEL.class_names;
+  const el = (id) => document.getElementById(id);
+
+  // Label
+  const labelEl = el("resultLabel");
+  labelEl.textContent = classNames[predIdx].toUpperCase();
+  labelEl.className = "result-label label-" + classNames[predIdx];
+
+  // Polarity marker (map -1..+1 to 0%..100%)
+  const pct = ((polarity + 1) / 2) * 100;
+  el("polarityMarker").style.left = pct + "%";
+  el("polarityValue").textContent = (polarity >= 0 ? "+" : "") + polarity.toFixed(3);
+
+  // Probability bars
+  el("probLeftBar").style.width   = (probs[0] * 100) + "%";
+  el("probCenterBar").style.width = (probs[1] * 100) + "%";
+  el("probRightBar").style.width  = (probs[2] * 100) + "%";
+  el("probLeftPct").textContent   = (probs[0] * 100).toFixed(1) + "%";
+  el("probCenterPct").textContent = (probs[1] * 100).toFixed(1) + "%";
+  el("probRightPct").textContent  = (probs[2] * 100).toFixed(1) + "%";
+
+  // Entropy
+  el("entropyVal").textContent = entropy.toFixed(3);
+  const maxEntropy = Math.log(3);
+  if (entropy < maxEntropy * 0.5) {
+    el("confidenceNote").textContent = "Relatively confident";
+  } else if (entropy < maxEntropy * 0.8) {
+    el("confidenceNote").textContent = "Moderate uncertainty";
+  } else {
+    el("confidenceNote").textContent = "High uncertainty";
+  }
+
+  // Features table
+  const tbody = el("featuresBody");
+  tbody.innerHTML = "";
+  for (const f of features) {
+    const tr = document.createElement("tr");
+    const dirClass = f.score > 0 ? "feat-pos" : "feat-neg";
+    const dirLabel = f.score > 0 ? "toward Right" : "toward Left";
+    tr.innerHTML = `<td>${escapeHtml(f.word)}</td>` +
+      `<td class="${dirClass}">${dirLabel}</td>` +
+      `<td class="feat-score ${dirClass}">${f.score >= 0 ? "+" : ""}${f.score.toFixed(4)}</td>`;
+    tbody.appendChild(tr);
+  }
+
+  el("results").classList.add("show");
+}
+
+function escapeHtml(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ===== LOAD MODEL =====
+async function loadModel() {
+  try {
+    const resp = await fetch("model.json");
+    MODEL = await resp.json();
+    document.getElementById("loadingMsg").style.display = "none";
+    document.getElementById("analyzeBtn").disabled = false;
+    console.log("Model loaded:", MODEL.n_features, "features");
+  } catch (e) {
+    document.getElementById("loadingMsg").textContent =
+      "Failed to load model. Make sure model.json is in the same directory.";
+    console.error("Model load error:", e);
+  }
+}
+
+document.getElementById("analyzeBtn").disabled = true;
+loadModel();
+
+// Allow Ctrl+Enter to analyze
+document.getElementById("textInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { analyze(); }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Artifacts (large model files, plots) - keep docs/ for GitHub Pages
+artifacts/
+!artifacts/.gitkeep
+
+# Data (user-provided, not committed)
+data/raw/*.jsonl
+data/processed/
+data/labels/*.csv
+!data/labels/.gitkeep
+!data/raw/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.venv/
+venv/
+
+# Pytest
+.pytest_cache/
+htmlcov/
+.coverage

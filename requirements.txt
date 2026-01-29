@@ -1,0 +1,18 @@
+# Political Polarity Analysis - Pinned Dependencies
+# Python 3.11 required
+numpy==1.26.4
+pandas==2.2.1
+scikit-learn==1.4.1.post1
+scipy==1.12.0
+matplotlib==3.8.3
+pyyaml==6.0.1
+torch==2.2.1
+transformers==4.38.2
+datasets==2.18.0
+accelerate==0.27.2
+langdetect==1.0.9
+beautifulsoup4==4.12.3
+tqdm==4.66.2
+gradio==4.19.2
+pytest==8.0.2
+pytest-cov==4.1.0
