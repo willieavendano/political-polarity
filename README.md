@@ -1,5 +1,8 @@
 # Political Polarity Text Analyzer
 
+> **AP Research project — The Cushman School**
+> This tool was developed in the context of AP Research, where students conduct independent inquiry into quantitative and computational questions. See the [AP Research course repo](https://github.com/willieavendano/ap-research) for context and related work.
+
 NLP pipeline for measuring political polarity in text corpora.
 
 **This system classifies TEXT CONTENT, not individuals. Do NOT use outputs to infer any individual's political beliefs or any protected demographic trait.**
